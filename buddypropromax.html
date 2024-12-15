@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FocusBuddy</title>
+<style>
+  body,html{
+    margin:0; padding:0; width:100%; height:100%; 
+    font-family: "Helvetica Neue", "Microsoft Yahei", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  }
+  *{box-sizing:border-box;}
+
+  .hidden {
+    display:none !important;
+  }
+
+  body {
+    background: linear-gradient(135deg, #ffe7f9 0%, #e7f9ff 100%);
+    color: #444;
+    font-size:16px;
+    line-height:1.5;
+  }
+
+  button {
+    background: #ffdce7;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    margin:10px 0;
+    transition: all 0.3s;
+    font-size:16px;
+    display:inline-block;
+  }
+  button:hover {
+    background: #ffcce0;
+  }
+
+  .main-page,
+  .sub-page {
+    display:flex; 
+    flex-direction:column; 
+    align-items:center; 
+    justify-content:flex-start;
+    padding:20px;
+    min-height:100vh;
+    box-sizing:border-box;
+  }
+
+  .main-page {
+    justify-content:center;
+    text-align:center;
+  }
+
+  .main-title {
+    font-size: 2em;
+    font-weight:bold;
+    margin-bottom:20px;
+    color:#333;
+  }
+
+  .main-desc {
+    font-size:1em;
+    color:#666;
+    margin-bottom:30px;
+    max-width:90%;
+  }
+
+  .nav-bar {
+    width:100%;
+    display:flex;
+    justify-content:flex-start;
+  }
+
+  .nav-bar button {
+    margin-left:0;
+  }
+
+  .section-title {
+    font-size:1.5em;
+    margin-top:0;
+    color:#444;
+    text-align:center;
+    padding:10px 0;
+  }
+
+  .task-list {
+    list-style:none;
+    padding:0;
+    margin:10px 0;
+    width:100%;
+    max-width:500px;
+  }
+  .task-list li {
+    background:#fff;
+    margin:5px 0;
+    padding:8px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:14px;
+  }
+  .task-list li.completed {
+    text-decoration: line-through;
+    color:#aaa;
+  }
+
+  .mouse-area {
+    position:relative;
+    margin-top:20px;
+    text-align:center;
+    padding:20px;
+    border-radius:20px;
+    background:#fff3f5;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+    width:100%;
+    max-width:200px;
+  }
+
+  .hamster-img {
+    font-size:50px; 
+    display:block;
+  }
+
+  /* 将对话框移动到小鼠左侧 */
+  .speech-bubble {
+    position:absolute;
+    top:50%; 
+    left:-10px;
+    transform:translate(-100%,-50%);
+    background:#fff;
+    padding:10px;
+    border-radius:10px;
+    border:2px solid #ffdca7;
+    box-shadow:0 0 5px rgba(0,0,0,0.1);
+    max-width:120px;
+    font-size:14px;
+    color:#333;
+    text-align:center;
+    word-wrap:break-word;
+  }
+  .speech-bubble:after {
+    content:'';
+    position:absolute;
+    top:50%; 
+    right:-10px; 
+    transform:translateY(-50%);
+    border:10px solid transparent;
+    border-left-color:#fff;
+  }
+
+  .mood-form {
+    background:#ffffffcc;
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0 0 5px rgba(0,0,0,0.1);
+    margin-bottom:20px;
+    width:100%;
+    max-width:500px;
+  }
+
+  .mood-response {
+    background:#fff;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    max-width:500px;
+    width:100%;
+    margin-top:10px;
+    font-size:14px;
+    word-break:break-word;
+  }
+
+  .gift-bag {
+    background:#ffffffcc;
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0 0 5px rgba(0,0,0,0.1);
+    width:100%;
+    max-width:500px;
+    text-align:left;
+  }
+  .gift-bag ul {
+    list-style:none;
+    padding:0;
+  }
+  .gift-bag li {
+    background:#fff;
+    margin:5px 0;
+    padding:8px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    font-size:14px;
+  }
+
+  input[type="text"], select {
+    padding:8px;
+    font-size:14px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    margin:5px;
+    width:90%;
+    max-width:200px;
+    box-sizing:border-box;
+  }
+
+  .modal-overlay {
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.3);
+    display:flex;justify-content:center;align-items:center;
+    z-index:9999;
+  }
+  .modal {
+    background:#fff;
+    padding:20px;
+    border-radius:20px;
+    text-align:center;
+    width:80%;
+    max-width:300px;
+    position:relative;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+  }
+  .modal h3 {
+    margin-top:0;
+  }
+  .close-btn {
+    position:absolute;
+    top:10px; right:10px;
+    background:none;
+    border:none;
+    font-size:20px;
+    cursor:pointer;
+  }
+
+</style>
+</head>
+<body>
+<!-- 主页面 -->
+<div class="main-page" id="mainPage">
+  <div class="main-title">🎀FocusBuddy🎀</div>
+  <div class="main-desc">和可爱的小鼠一起规划你的一天✍️</div>
+  <button id="goTaskPageBtn">🐹小鼠陪伴</button>
+  <button id="goMoodPageBtn">️📬收听人类心事</button>
+  <button id="goBagPageBtn">🎒背包</button>
+  <p style="font-size:12px; color:#666; margin-top:20px;">由润 & ChatGPT 制作</p >
+</div>
+
+<!-- 小鼠陪伴页面 -->
+<div class="sub-page hidden" id="taskPage">
+  <div class="nav-bar"><button id="backToMainFromTask">← 返回主页</button></div>
+  <h2 class="section-title">🐹小鼠陪伴</h2>
+  <div style="text-align:center;">
+    <h3>添加任务📌加油人类！</h3>
+    <div>
+      <input type="text" id="taskInput" placeholder="输入你的任务…" />
+      <input type="text" id="taskTimer" placeholder="预计完成时间(备注)"/>
+    </div>
+    <button id="addTaskBtn">添加任务</button>
+  </div>
+  
+  <ul class="task-list" id="taskList"></ul>
+  
+  <div class="mouse-area" id="mouseArea">
+    <div class="hamster-img">🐹</div>
+    <div class="speech-bubble" id="mouseMessage">吱吱？</div>
+  </div>
+  
+  <div style="margin-top:20px;text-align:center;">
+    <h3>晚安总结💤</h3>
+    <button id="summaryBtn">查看今天总结</button>
+    <div id="summaryMessage" style="margin-top:10px;color:#333;"></div>
+  </div>
+</div>
+
+<!-- 人类心事页面 -->
+<div class="sub-page hidden" id="moodPage">
+  <div class="nav-bar"><button id="backToMainFromMood">← 返回主页</button></div>
+  <h2 class="section-title">️📬收听人类心事</h2>
+  <div class="mood-form">
+    <input type="text" id="moodInput" placeholder="输入你的心事…"/>
+    <select id="moodSelect">
+      <option value="开心">开心</option>
+      <option value="伤心">伤心</option>
+      <option value="愤怒">愤怒</option>
+      <option value="平静">平静</option>
+      <option value="烦躁">烦躁</option>
+    </select>
+    <button id="submitMoodBtn">倾诉💭</button>
+  </div>
+  <div class="mood-response" id="moodResponse" style="display:none;"></div>
+</div>
+
+<!-- 背包页面 -->
+<div class="sub-page hidden" id="bagPage">
+  <div class="nav-bar"><button id="backToMainFromBag">← 返回主页</button></div>
+  <h2 class="section-title">🎒背包</h2>
+  <div class="gift-bag" id="giftBag">
+    <strong>背包中的礼物：</strong>
+    <ul id="giftList"></ul>
+    <div id="noGiftMsg">暂时还没有收到小鼠的礼物哦～(>_<)</div>
+  </div>
+</div>
+
+<!-- 弹窗：初始就添加hidden类 -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <button class="close-btn" id="closeModalBtn">×</button>
+    <h3>任务进行中...🐹吱吱</h3>
+    <div id="expectedTimeTxt">人类完成了嘛：</div>
+    <div style="margin-top:10px;">
+      <button id="taskCompleteBtn">完成啦！🥰</button>
+      <button id="taskGiveUpBtn">放弃吧…😣</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 页面切换逻辑
+const mainPage = document.getElementById('mainPage');
+const taskPage = document.getElementById('taskPage');
+const moodPage = document.getElementById('moodPage');
+const bagPage = document.getElementById('bagPage');
+
+document.getElementById('goTaskPageBtn').addEventListener('click', ()=>{
+  showPage(taskPage);
+});
+document.getElementById('goMoodPageBtn').addEventListener('click', ()=>{
+  showPage(moodPage);
+});
+document.getElementById('goBagPageBtn').addEventListener('click', ()=>{
+  showPage(bagPage);
+});
+
+document.getElementById('backToMainFromTask').addEventListener('click', ()=>{showPage(mainPage)});
+document.getElementById('backToMainFromMood').addEventListener('click', ()=>{showPage(mainPage)});
+document.getElementById('backToMainFromBag').addEventListener('click', ()=>{showPage(mainPage)});
+
+function showPage(page){
+  mainPage.classList.add('hidden');
+  taskPage.classList.add('hidden');
+  moodPage.classList.add('hidden');
+  bagPage.classList.add('hidden');
+  page.classList.remove('hidden');
+}
+
+// 全局变量
+let tasks = []; // {text:'', completed:false, time:''}
+let gifts = [];
+let currentTaskIndex = null; 
+
+// DOM元素
+const taskInput = document.getElementById('taskInput');
+const taskTimer = document.getElementById('taskTimer');
+const addTaskBtn = document.getElementById('addTaskBtn');
+const taskList = document.getElementById('taskList');
+const mouseMessage = document.getElementById('mouseMessage');
+const summaryBtn = document.getElementById('summaryBtn');
+const summaryMessage = document.getElementById('summaryMessage');
+
+const giftList = document.getElementById('giftList');
+const noGiftMsg = document.getElementById('noGiftMsg');
+
+const modalOverlay = document.getElementById('modalOverlay');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const taskCompleteBtn = document.getElementById('taskCompleteBtn');
+const taskGiveUpBtn = document.getElementById('taskGiveUpBtn');
+const expectedTimeTxt = document.getElementById('expectedTimeTxt');
+
+const moodInput = document.getElementById('moodInput');
+const moodSelect = document.getElementById('moodSelect');
+const submitMoodBtn = document.getElementById('submitMoodBtn');
+const moodResponse = document.getElementById('moodResponse');
+
+// 对话池
+const addTaskResponses = [
+  "吱吱！任务收到啦！(o^ ^o)",
+  "加油人类！我在小仓库等你的好消息！(≧∀≦)ゞ",
+  "今天的安排已收下～记得来检查哦！(><)"
+];
+const completeTaskResponses = [
+  "任务完成！给你一个大大的抱抱！(>ω<)",
+  "太棒啦！你最厉害！给你一颗爱心～💕",
+  "像啃坚果一样，任务被你轻松啃掉啦！(ง •̀_•́)ง"
+];
+const clickMouseResponses = [
+  "再啃一口！任务快完成啦！(✪ω✪)",
+  "吱吱～慢慢来，鼠陪着你(*๓´╰╯`๓)",
+  "别摸我～快专心工作啦！(><)",
+  "任务还在那儿等着呢～加油加油！o(´^｀)o",
+  "(*´∀`)比心～"
+];
+const failedTaskResponses = [
+  "吱？没完成…别气馁，还有机会！",
+  "下次一定行！记得看时间哦！(๑´ㅂ`๑) "
+];
+const giveUpTaskResponses = [
+  "任务放下也没关系，好好休息！♡",
+  "下次先从简单的开始啃吧！"
+];
+const summaryGoodResponses = [
+  "今天完成好多！鼠转圈表示开心！(｡◕ˇ∀ˇ◕)",
+  "你是鼠心中的效率之王！(..›ᴗ‹..)",
+  "完成量好厉害，让鼠想给你献上小坚果！(♡´ ³`)"
+];
+const summaryBadResponses = [
+  "今天有点累？明天会更棒！",
+  "鼠陪着你，下次再一起努力吧！(=´▽｀)ゞ  ",
+  "没关系，明天继续加油吧！(｡•ˇ‸ˇ•｡)"
+];
+
+const possibleGifts = [
+  "一朵小花🌺",
+  "一颗小坚果🥜",
+  "一张可爱贴纸✨️",
+  "一片四叶草🍀",
+  "一粒小星星⭐"
+];
+
+const moodResponsesObj = {
+  "开心": [
+    "开心是最棒的能量！继续保持！(≧∀≦)ゞ",
+    "人开心，鼠也开心！(o^ ^o)",
+    "讲讲遇到什么趣事吧！(>ω<)"
+  ],
+  "伤心":[
+    "抱抱～慢慢调整情绪。(>_<)",
+    "给你小坚果，带来温暖。(o^ ^o)",
+    "哭也没事，还有鼠在呢。(｡•ω•｡)"
+  ],
+  "愤怒":[
+    "吱吱！发泄一下吧，深呼吸～(ง •̀_•́)ง",
+    "我陪你跑滚轮解压！(>ω<)",
+    "谁惹你生气？鼠也一起生气！(｀Д´*)"
+  ],
+  "平静":[
+    "你的平静感染了鼠。(o^ ^o)",
+    "有你相伴，鼠很安心。(｡•ω•｡)ﾉ♡",
+    "希望这份平静伴你更久。(≧∀≦)"
+  ],
+  "烦躁":[
+    "深呼吸，我帮你数数。(><)",
+    "一点点来，会好起来的！(o^ ^o)",
+    "揉揉鼠的肚子，会好点吗？(｡•ω•｡)"
+  ]
+};
+
+// 添加任务
+addTaskBtn.addEventListener('click', ()=>{
+  const text = taskInput.value.trim();
+  const timeRemark = taskTimer.value.trim();
+
+  if(!text){
+    alert("姐姐～请先输入任务哦！(><)");
+    return;
+  }
+
+  tasks.push({text, completed:false, time:timeRemark});
+  renderTasks();
+  showMouseMessage(randomFromArray(addTaskResponses));
+  taskInput.value = '';
+  taskTimer.value = '';
+
+  currentTaskIndex = tasks.length - 1;
+  showModal(timeRemark);
+});
+
+function showModal(timeRemark){
+  expectedTimeTxt.innerText = timeRemark ? `预计完成时间：${timeRemark}\n请选择你的操作:` : "请选择你的操作：";
+  modalOverlay.classList.remove('hidden');
+}
+
+// 完成
+taskCompleteBtn.addEventListener('click', ()=>{
+  modalOverlay.classList.add('hidden');
+  completeTask(currentTaskIndex);
+});
+
+// 放弃
+taskGiveUpBtn.addEventListener('click', ()=>{
+  modalOverlay.classList.add('hidden');
+  giveUpTask(currentTaskIndex);
+});
+
+// 超时
+closeModalBtn.addEventListener('click', ()=>{
+  modalOverlay.classList.add('hidden');
+  handleTimeout(currentTaskIndex);
+});
+
+function completeTask(index){
+  if(index>=0 && index<tasks.length){
+    tasks[index].completed = true;
+    renderTasks();
+    showMouseMessage(randomFromArray(completeTaskResponses));
+  }
+}
+
+function giveUpTask(index){
+  showMouseMessage(randomFromArray(giveUpTaskResponses));
+}
+
+function handleTimeout(index){
+  showMouseMessage(randomFromArray(failedTaskResponses));
+}
+
+function renderTasks(){
+  taskList.innerHTML = '';
+  tasks.forEach((t, i)=>{
+    const li = document.createElement('li');
+    li.className = t.completed?'completed':'';
+    li.innerHTML = `
+      <span>${t.text}${t.time?`(预计:${t.time})`:''}</span>
+      <input type="checkbox" ${t.completed?'checked':''}/>
+    `;
+    li.querySelector('input').addEventListener('click',()=>{
+      tasks[i].completed = !tasks[i].completed;
+      if(tasks[i].completed){
+        showMouseMessage(randomFromArray(completeTaskResponses));
+      }
+      renderTasks();
+    });
+    taskList.appendChild(li);
+  });
+}
+
+// 鼠鼠区域点击
+document.getElementById('mouseArea').addEventListener('click', ()=>{
+  showMouseMessage(randomFromArray(clickMouseResponses));
+});
+
+// 显示鼠鼠话语
+function showMouseMessage(msg){
+  mouseMessage.innerText = msg;
+}
+
+// 晚安总结
+summaryBtn.addEventListener('click', ()=>{
+  let completedCount = tasks.filter(t=>t.completed).length;
+  let notCompletedCount = tasks.length - completedCount;
+  if(tasks.length === 0){
+    summaryMessage.innerText = "今天没有记录任务哦～(><)";
+    return;
+  }
+  let responsePool = completedCount > notCompletedCount ? summaryGoodResponses : summaryBadResponses;
+  summaryMessage.innerText = randomFromArray(responsePool);
+
+  // 随机礼物
+  const gift = randomFromArray(possibleGifts);
+  gifts.push(gift);
+  refreshGiftBag();
+});
+
+function refreshGiftBag(){
+  giftList.innerHTML = '';
+  if(gifts.length===0){
+    noGiftMsg.style.display='block';
+  }else{
+    noGiftMsg.style.display='none';
+    gifts.forEach(g=>{
+      let li = document.createElement('li');
+      li.innerText = g;
+      giftList.appendChild(li);
+    });
+  }
+}
+
+// 倾诉心事
+submitMoodBtn.addEventListener('click', ()=>{
+  const text = moodInput.value.trim();
+  const mood = moodSelect.value;
+  if(!text){
+    alert("姐姐～先说点什么吧😊");
+    return;
+  }
+  const res = randomFromArray(moodResponsesObj[mood]);
+  moodResponse.style.display = 'block';
+  moodResponse.innerText = res;
+  moodInput.value = '';
+});
+
+function randomFromArray(arr){
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
+// 初始化
+showPage(mainPage);
+refreshGiftBag();
+modalOverlay.classList.add('hidden');
+</script>
+</body>
+</html>
