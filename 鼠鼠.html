@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FocusBuddy</title>
+<style>
+  body {
+    font-family: sans-serif;
+    display: flex;
+    margin: 0;
+    padding: 0;
+    background: #f2f2f2;
+  }
+  .container {
+    display: flex;
+    flex:1;
+    min-height: 100vh;
+  }
+  .left-pane, .right-pane {
+    width: 50%;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow:auto;
+  }
+  .left-pane {
+    background: #fffbe7;
+    border-right: 2px solid #ddd;
+  }
+  .right-pane {
+    background: #eefaff;
+  }
+  h2 {
+    margin-top:0;
+  }
+  .task-list {
+    list-style: none;
+    padding: 0;
+  }
+  .task-list li {
+    background: #fff;
+    margin: 5px 0;
+    padding: 8px;
+    border-radius: 5px;
+    border:1px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .task-list li.completed {
+    text-decoration: line-through;
+    color: #aaa;
+  }
+  .mouse-area {
+    margin-top:20px;
+    background:#fffbf0;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid #ddd;
+    text-align:center;
+    cursor:pointer;
+    position: relative;
+  }
+  .mouse-area:hover {
+    background:#fff1d8;
+  }
+  .mouse-message {
+    margin-top:10px;
+    font-size: 14px;
+    color:#333;
+    line-height:1.5;
+  }
+  /* 人类心事栏 */
+  .mood-form {
+    margin-bottom:20px;
+    padding:10px;
+    background:#ffffffcc;
+    border-radius:10px;
+    border:1px solid #ccc;
+  }
+  .mood-response {
+    background:#fff;
+    padding:10px;
+    margin-top:10px;
+    border-radius:5px;
+    border:1px solid #ccc;
+  }
+  .gift-bag {
+    margin-top:15px;
+    background:#ffffffcc;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:10px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- 小鼠陪伴栏 -->
+  <div class="left-pane">
+    <h2>小鼠陪伴栏</h2>
+    <div>
+      <h3>添加任务</h3>
+      <input type="text" id="taskInput" placeholder="输入你的任务…" />
+      <button id="addTaskBtn">添加任务</button>
+    </div>
+    <ul class="task-list" id="taskList"></ul>
+    
+    <div class="mouse-area" id="mouseArea">
+      <div style="font-size:24px;">（>ω<）</div>
+      <div class="mouse-message" id="mouseMessage">吱吱？</div>
+    </div>
+    
+    <div style="margin-top:20px;">
+      <h3>晚安总结</h3>
+      <button id="summaryBtn">查看今天总结</button>
+      <div id="summaryMessage" style="margin-top:10px;color:#333;"></div>
+      <div class="gift-bag" style="display:none;" id="giftBag">
+        <strong>背包中的礼物：</strong>
+        <ul id="giftList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 收听人类心事栏 -->
+  <div class="right-pane">
+    <h2>收听人类心事</h2>
+    <div class="mood-form">
+      <input type="text" id="moodInput" placeholder="输入你的心事…" style="width:70%;"/>
+      <select id="moodSelect">
+        <option value="开心">开心</option>
+        <option value="伤心">伤心</option>
+        <option value="愤怒">愤怒</option>
+        <option value="平静">平静</option>
+        <option value="烦躁">烦躁</option>
+      </select>
+      <button id="submitMoodBtn">倾诉</button>
+    </div>
+    <div class="mood-response" id="moodResponse" style="display:none;"></div>
+  </div>
+</div>
+
+
+<script>
+// 任务与小鼠互动逻辑
+const taskInput = document.getElementById('taskInput');
+const addTaskBtn = document.getElementById('addTaskBtn');
+const taskList = document.getElementById('taskList');
+const mouseMessage = document.getElementById('mouseMessage');
+const mouseArea = document.getElementById('mouseArea');
+const summaryBtn = document.getElementById('summaryBtn');
+const summaryMessage = document.getElementById('summaryMessage');
+const giftBag = document.getElementById('giftBag');
+const giftList = document.getElementById('giftList');
+
+let tasks = []; // {text:'', completed:false}
+
+// 随机对话池
+const addTaskResponses = [
+  "吱吱！任务收到啦，我会帮你记在小仓库里！",
+  "加油人类！我在小仓库等你的好消息哦！",
+  "今天的安排都放好啦～记得来检查哦！"
+];
+
+const completeTaskResponses = [
+  "任务完成！本鼠给你一个大大的抱抱！",
+  "太棒啦！你就是最厉害的人类脑袋！给你一颗小鼠爱心～",
+  "咔嚓咔嚓！像我啃坚果一样，任务被你轻松啃掉啦！"
+];
+
+const clickMouseResponses = [
+  "再啃一口！任务快完成啦！",
+  "吱吱～慢慢来，鼠鼠陪着你！",
+  "别摸我～快专心工作啦！",
+  "吱？任务还在那儿等着呢，要不要一起努力啃啃看？",
+  "(*´∀`)比心～"
+];
+
+const failedTaskResponses = [
+  "吱？好像没完成…别气馁，还有机会！",
+  "吱吱～要记得看任务时间啦！时间溜得比我跑滚轮还快呢！没关系，鼠相信你，下次一定行！"
+];
+
+const giveUpTaskResponses = [
+  "任务可以放下，但人类一定要好好休息！",
+  "鼠相信你哟，下次先从最简单的那一块啃起吧！"
+];
+
+const summaryGoodResponses = [
+  "今天完成了好多！鼠骄傲地转三圈～",
+  "吱吱！你是鼠心中的效率之王！",
+  "鼠数了数，今天你完成了好多哦！厉害到让我想给你献一颗瓜子！"
+];
+
+const summaryBadResponses = [
+  "今天有点累？没事，调整好明天会更棒！",
+  "鼠鼠陪着你，下次我们再一起努力吧！",
+  "没关系啦～鼠鼠也有把坚果藏到忘记的日子！明天继续一起加油吧！"
+];
+
+// 随机礼物
+const gifts = [
+  "一朵小花",
+  "一颗小坚果",
+  "一张贴纸",
+  "一片小叶子",
+  "一粒小星星装饰"
+];
+
+// 添加任务
+addTaskBtn.addEventListener('click', () => {
+  const text = taskInput.value.trim();
+  if(text){
+    tasks.push({text, completed:false});
+    renderTasks();
+    showMouseMessage(randomFromArray(addTaskResponses));
+    taskInput.value = '';
+  }
+});
+
+// 切换任务完成状态
+function toggleTaskCompletion(index){
+  tasks[index].completed = !tasks[index].completed;
+  renderTasks();
+  if(tasks[index].completed){
+    showMouseMessage(randomFromArray(completeTaskResponses));
+  }
+}
+
+function renderTasks(){
+  taskList.innerHTML = '';
+  tasks.forEach((t, i) => {
+    const li = document.createElement('li');
+    li.className = t.completed?'completed':'';
+    li.innerHTML = `
+      <span>${t.text}</span>
+      <input type="checkbox" ${t.completed?'checked':''}/>
+    `;
+    li.querySelector('input').addEventListener('click', ()=>{
+      toggleTaskCompletion(i);
+    });
+    taskList.appendChild(li);
+  });
+}
+
+mouseArea.addEventListener('click', ()=>{
+  // 点击鼠鼠时的互动
+  showMouseMessage(randomFromArray(clickMouseResponses));
+});
+
+// 晚安总结
+summaryBtn.addEventListener('click', ()=>{
+  let completedCount = tasks.filter(t=>t.completed).length;
+  let notCompletedCount = tasks.length - completedCount;
+  if(tasks.length === 0){
+    summaryMessage.innerText = "今天好像没有什么任务记录呢～";
+    giftBag.style.display='none';
+    return;
+  }
+  // 根据完成情况给出总结
+  let responsePool = completedCount > notCompletedCount ? summaryGoodResponses : summaryBadResponses;
+  summaryMessage.innerText = randomFromArray(responsePool);
+  
+  // 随机送礼物
+  const gift = randomFromArray(gifts);
+  giftBag.style.display='block';
+  giftList.innerHTML = `<li>${gift}</li>`;
+});
+
+// 工具函数
+function randomFromArray(arr){
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
+function showMouseMessage(msg){
+  mouseMessage.innerText = msg;
+}
+
+// ------------ 人类心事互动 ------------
+const moodInput = document.getElementById('moodInput');
+const moodSelect = document.getElementById('moodSelect');
+const submitMoodBtn = document.getElementById('submitMoodBtn');
+const moodResponse = document.getElementById('moodResponse');
+
+// 心情回应表
+const moodResponses = {
+  "开心": [
+    "吱吱！开心是最棒的能量，保持下去！",
+    "人开心鼠也开心，跑圈跑得更快了！",
+    "给鼠讲讲遇到了什么趣事吧！"
+  ],
+  "伤心":[
+    "抱抱～鼠陪你慢慢调整情绪。",
+    "这颗小坚果送给你，愿它带来一点点温暖。",
+    "没关系，哭出来也没事，还有鼠在呢。"
+  ],
+  "愤怒":[
+    "吱吱！把怒气发泄出来吧，深呼吸试试看？",
+    "来，我陪你一起跑滚轮解压！",
+    "谁惹你生气了？鼠也跟你一起生气！"
+  ],
+  "平静":[
+    "吱～你的平静感染到鼠了。",
+    "有你这样的伙伴，鼠觉得很安心。",
+    "希望这份平静能陪伴你更久一些！"
+  ],
+  "烦躁":[
+    "试试深呼吸，鼠帮你数数？",
+    "咔嚓咔嚓，一点点来，会好起来的！",
+    "揉揉鼠的肚子，心情会不会好一点？"
+  ]
+};
+
+submitMoodBtn.addEventListener('click', ()=>{
+  const text = moodInput.value.trim();
+  const mood = moodSelect.value;
+  if(!text){
+    alert("姐姐～先说点什么吧 (๑•̀ㅂ•́)و✧");
+    return;
+  }
+  // 根据心情给出回应
+  const res = randomFromArray(moodResponses[mood]);
+  moodResponse.style.display = 'block';
+  moodResponse.innerText = res;
+  moodInput.value = '';
+});
+
+
+</script>
+</body>
+</html>
