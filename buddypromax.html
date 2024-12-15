@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FocusBuddy</title>
+<style>
+  body,html{
+    margin:0; padding:0; width:100%; height:100%; 
+    font-family: "Helvetica Neue", sans-serif, "Microsoft Yahei";
+  }
+  *{box-sizing:border-box;}
+
+  .hidden {
+    display:none !important;
+  }
+
+  /* 可爱的基础色调 */
+  body {
+    background: linear-gradient(135deg, #ffe7f9 0%, #e7f9ff 100%);
+    color: #444;
+  }
+
+  button {
+    background: #ffdce7;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    margin:5px;
+    transition: all 0.3s;
+    font-size:14px;
+  }
+  button:hover {
+    background: #ffcce0;
+  }
+
+  /* 标题和说明加上可爱符号 */
+  .main-page,
+  .sub-page {
+    display:flex; 
+    flex-direction:column; 
+    align-items:center; 
+    justify-content:flex-start;
+    padding:20px;
+  }
+
+  .main-page {
+    justify-content:center;
+    text-align:center;
+  }
+
+  .main-title {
+    font-size: 2.5em;
+    font-weight:bold;
+    margin-bottom:20px;
+    color:#333;
+    font-family: "Microsoft YaHei", sans-serif;
+    /* 加一些可爱符号 */
+    position: relative;
+  }
+  .main-title:before,
+  .main-title:after {
+    content: "˚˖︎*:.｡°⑅.★˖˚";
+    font-size: 0.5em;
+    color:#f6a;
+    position:absolute;
+  }
+  .main-title:before {
+    top:-20px;left:-40px;
+  }
+  .main-title:after {
+    bottom:-20px;right:-40px;
+  }
+
+  .main-desc {
+    font-size:1em;
+    color:#666;
+    margin-bottom:30px;
+  }
+
+  .nav-bar {
+    width:100%;
+    display:flex;
+    justify-content:flex-start;
+  }
+
+  .nav-bar button {
+    margin-left:0;
+  }
+
+  .section-title {
+    font-size:1.5em;
+    margin-top:0;
+    color:#444;
+    text-align:center;
+    position:relative;
+    padding:10px;
+  }
+  .section-title:after {
+    content:"˚˖︎*:.｡°⑅.★˖˚";
+    position:absolute;
+    font-size:0.5em;
+    color:#f6a;
+    bottom:-10px;left:50%;transform:translateX(-50%);
+  }
+
+  .task-list {
+    list-style:none;
+    padding:0;
+    margin:10px 0;
+    width:100%;
+    max-width:500px;
+  }
+  .task-list li {
+    background:#fff;
+    margin:5px 0;
+    padding:8px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    display:flex; align-items:center; justify-content:space-between;
+    font-size:14px;
+  }
+  .task-list li.completed {
+    text-decoration: line-through;
+    color:#aaa;
+  }
+
+  .mouse-area {
+    position:relative;
+    margin-top:20px;
+    text-align:center;
+    padding:20px;
+    border-radius:20px;
+    background:#fff3f5;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+  }
+  .hamster-img {
+    font-size:50px; /* 用大字体显示emoji */
+    display:block;
+  }
+  .speech-bubble {
+    position:absolute;
+    top:0; left:50%;
+    transform:translate(-50%, -110%);
+    background:#fff;
+    padding:10px;
+    border-radius:10px;
+    border:2px solid #ffdca7;
+    box-shadow:0 0 5px rgba(0,0,0,0.1);
+    max-width:200px;
+    font-size:14px;
+    color:#333;
+    text-align:center;
+  }
+  .speech-bubble:after {
+    content:'';
+    position:absolute;
+    bottom:-10px; left:50%;
+    transform:translateX(-50%);
+    border:10px solid transparent;
+    border-top-color:#fff;
+  }
+
+  /* 模态框 */
+  .modal-overlay {
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.3);
+    display:flex;justify-content:center;align-items:center;
+    z-index:9999;
+  }
+  .modal {
+    background:#fff;
+    padding:20px;
+    border-radius:20px;
+    text-align:center;
+    width:300px;
+    position:relative;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+  }
+  .modal h3 {
+    margin-top:0;
+  }
+  .close-btn {
+    position:absolute;
+    top:10px; right:10px;
+    background:none;
+    border:none;
+    font-size:20px;
+    cursor:pointer;
+  }
+
+  .mood-form {
+    background:#ffffffcc;
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0 0 5px rgba(0,0,0,0.1);
+    margin-bottom:20px;
+    width:100%;
+    max-width:500px;
+  }
+
+  .mood-response {
+    background:#fff;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    max-width:500px;
+    width:100%;
+    margin-top:10px;
+    font-size:14px;
+  }
+
+  .gift-bag {
+    background:#ffffffcc;
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0 0 5px rgba(0,0,0,0.1);
+    width:100%;
+    max-width:500px;
+    text-align:left;
+  }
+  .gift-bag ul {
+    list-style:none;
+    padding:0;
+  }
+  .gift-bag li {
+    background:#fff;
+    margin:5px 0;
+    padding:8px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    font-size:14px;
+  }
+
+</style>
+</head>
+<body>
+<!-- 主页面 -->
+<div class="main-page" id="mainPage">
+  <div class="main-title">FocusBuddy </div>
+  <div class="main-desc">和可爱的小鼠一起规划你的一天 (ฅ>ω<*ฅ)～</div>
+  <button id="goTaskPageBtn"> 小鼠陪伴</button>
+  <button id="goMoodPageBtn">💭 ️收听人类心事</button>
+  <button id="goBagPageBtn"> 背包</button>
+</div>
+
+<!-- 小鼠陪伴页面 -->
+<div class="sub-page hidden" id="taskPage">
+  <div class="nav-bar"><button id="backToMainFromTask">← 返回主页</button></div>
+  <h2 class="section-title"> 小鼠陪伴</h2>
+  <div style="text-align:center;">
+    <h3>添加任务 (ง •̀_•́)ง 加油！</h3>
+    <input type="text" id="taskInput" placeholder="输入你的任务…" style="width:60%;font-size:14px;padding:5px;"/>
+    <input type="text" id="taskTimer" placeholder="预计完成时间(备注)" style="width:30%;font-size:14px;padding:5px;"/>
+    <button id="addTaskBtn">添加任务</button>
+  </div>
+  
+  <ul class="task-list" id="taskList"></ul>
+  
+  <div class="mouse-area" id="mouseArea">
+    <div class="hamster-img"></div>
+    <div class="speech-bubble" id="mouseMessage">吱吱？</div>
+  </div>
+  
+  <div style="margin-top:20px;text-align:center;">
+    <h3>晚安总结 ✧(๑•̀ㅁ•́๑)✧</h3>
+    <button id="summaryBtn">查看今天总结</button>
+    <div id="summaryMessage" style="margin-top:10px;color:#333;"></div>
+  </div>
+</div>
+
+<!-- 人类心事页面 -->
+<div class="sub-page hidden" id="moodPage">
+  <div class="nav-bar"><button id="backToMainFromMood">← 返回主页</button></div>
+  <h2 class="section-title">💭 ️收听人类心事</h2>
+  <div class="mood-form">
+    <input type="text" id="moodInput" placeholder="输入你的心事…" style="width:60%;font-size:14px;padding:5px;"/>
+    <select id="moodSelect" style="font-size:14px;padding:5px;">
+      <option value="开心">开心</option>
+      <option value="伤心">伤心</option>
+      <option value="愤怒">愤怒</option>
+      <option value="平静">平静</option>
+      <option value="烦躁">烦躁</option>
+    </select>
+    <button id="submitMoodBtn">倾诉 (｡•ᴗ-)_✿</button>
+  </div>
+  <div class="mood-response" id="moodResponse" style="display:none;"></div>
+</div>
+
+<!-- 背包页面 -->
+<div class="sub-page hidden" id="bagPage">
+  <div class="nav-bar"><button id="backToMainFromBag">← 返回主页</button></div>
+  <h2 class="section-title"> 背包</h2>
+  <div class="gift-bag" id="giftBag">
+    <strong>背包中的礼物：</strong>
+    <ul id="giftList"></ul>
+    <div id="noGiftMsg">暂时还没有礼物哦～(>ω<)</div>
+  </div>
+</div>
+
+<!-- 弹窗：初始就添加hidden类 -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <button class="close-btn" id="closeModalBtn">×</button>
+    <h3>任务进行中... ( •̀ ω •́ )✧</h3>
+    <div id="expectedTimeTxt">请选择你的操作：</div>
+    <div style="margin-top:10px;">
+      <button id="taskCompleteBtn">完成啦！✧(ˊᗜˋ*)✧</button>
+      <button id="taskGiveUpBtn">放弃吧…(；´д｀)ゞ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 页面切换逻辑
+const mainPage = document.getElementById('mainPage');
+const taskPage = document.getElementById('taskPage');
+const moodPage = document.getElementById('moodPage');
+const bagPage = document.getElementById('bagPage');
+
+document.getElementById('goTaskPageBtn').addEventListener('click', ()=>{
+  showPage(taskPage);
+});
+document.getElementById('goMoodPageBtn').addEventListener('click', ()=>{
+  showPage(moodPage);
+});
+document.getElementById('goBagPageBtn').addEventListener('click', ()=>{
+  showPage(bagPage);
+});
+
+document.getElementById('backToMainFromTask').addEventListener('click', ()=>{showPage(mainPage)});
+document.getElementById('backToMainFromMood').addEventListener('click', ()=>{showPage(mainPage)});
+document.getElementById('backToMainFromBag').addEventListener('click', ()=>{showPage(mainPage)});
+
+function showPage(page){
+  mainPage.classList.add('hidden');
+  taskPage.classList.add('hidden');
+  moodPage.classList.add('hidden');
+  bagPage.classList.add('hidden');
+  page.classList.remove('hidden');
+}
+
+// 全局变量
+let tasks = []; // {text:'', completed:false, time:''}
+let gifts = [];
+let currentTaskIndex = null; 
+
+// DOM元素
+const taskInput = document.getElementById('taskInput');
+const taskTimer = document.getElementById('taskTimer');
+const addTaskBtn = document.getElementById('addTaskBtn');
+const taskList = document.getElementById('taskList');
+const mouseMessage = document.getElementById('mouseMessage');
+const summaryBtn = document.getElementById('summaryBtn');
+const summaryMessage = document.getElementById('summaryMessage');
+
+const giftList = document.getElementById('giftList');
+const noGiftMsg = document.getElementById('noGiftMsg');
+
+const modalOverlay = document.getElementById('modalOverlay');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const taskCompleteBtn = document.getElementById('taskCompleteBtn');
+const taskGiveUpBtn = document.getElementById('taskGiveUpBtn');
+const expectedTimeTxt = document.getElementById('expectedTimeTxt');
+
+const moodInput = document.getElementById('moodInput');
+const moodSelect = document.getElementById('moodSelect');
+const submitMoodBtn = document.getElementById('submitMoodBtn');
+const moodResponse = document.getElementById('moodResponse');
+
+// 对话池
+const addTaskResponses = [
+  "吱吱！任务收到啦，我会帮你记在小仓库里！(๑•̀ㅂ•́)و✧",
+  "加油人类！我在小仓库等你的好消息哦！ヾ(≧▽≦*)o",
+  "今天的安排都放好啦～记得来检查哦！(≧∀≦)ゞ"
+];
+const completeTaskResponses = [
+  "任务完成！本鼠给你一个大大的抱抱！(*≧ω≦)",
+  "太棒啦！你就是最厉害的人类脑袋！给你一颗小鼠爱心～💕",
+  "咔嚓咔嚓！像我啃坚果一样，任务被你轻松啃掉啦！٩(๑•̀ω•́๑)۶"
+];
+const clickMouseResponses = [
+  "再啃一口！任务快完成啦！(ง •̀_•́)ง",
+  "吱吱～慢慢来，鼠鼠陪着你！(●´∀｀●)",
+  "别摸我～快专心工作啦！(>﹏<)",
+  "吱？任务还在那儿等着呢，要不要一起努力啃啃看？o(*≧▽≦)ツ",
+  "(*´∀`)比心～"
+];
+const failedTaskResponses = [
+  "吱？好像没完成…别气馁，还有机会！( •̀ ω •́ )✧",
+  "吱吱～要记得看任务时间啦！没关系，鼠相信你，下次一定行！(>ω<)"
+];
+const giveUpTaskResponses = [
+  "任务可以放下，但人类一定要好好休息！(*´▽`*)",
+  "鼠相信你哟，下次先从最简单的那一块啃起吧！٩(๑❛ᴗ❛๑)۶"
+];
+const summaryGoodResponses = [
+  "今天完成了好多！鼠骄傲地转三圈～(ﾉ>ω<)ﾉ",
+  "吱吱！你是鼠心中的效率之王！( •̀ ω •́ )y",
+  "鼠数了数，今天你完成了好多哦！厉害～☆(ﾟ▽ﾟ)"
+];
+const summaryBadResponses = [
+  "今天有点累？没事，明天会更棒！(๑•̀ㅁ•́ฅ✧",
+  "鼠鼠陪着你，下次我们再一起努力吧！(o^ ^o)",
+  "没关系啦～鼠鼠也有藏坚果忘记的时候！明天继续加油吧！(ง •̀_•́)ง"
+];
+
+const possibleGifts = [
+  "一朵小花",
+  "一颗小坚果🥜",
+  "一张可爱贴纸",
+  "一片小叶子",
+  "一粒小星星装饰⭐"
+];
+
+// 心情回应表
+const moodResponsesObj = {
+  "开心": [
+    "吱吱！开心是最棒的能量，保持下去！✧(ˊᗜˋ*)✧",
+    "人开心鼠也开心，跑圈跑得更快了！(ﾉ>ω<)ﾉ",
+    "给鼠讲讲遇到了什么趣事吧！(≧∀≦)♪"
+  ],
+  "伤心":[
+    "抱抱～鼠陪你慢慢调整情绪。(っ´ω`c)",
+    "这颗小坚果送给你，愿它带来一点点温暖。(✿◡‿◡)",
+    "没关系，哭出来也没事，还有鼠在呢。( •̥́ ˍ •̀ू )"
+  ],
+  "愤怒":[
+    "吱吱！发泄出来吧，深呼吸试试看？(￣﹏￣；)",
+    "来，我陪你一起跑滚轮解压！(ง •_•)ง",
+    "谁惹你生气了？鼠也跟你一起生气！(╬▔皿▔)╯"
+  ],
+  "平静":[
+    "吱～你的平静感染到鼠了。( ˘ω˘ )",
+    "有你这样的伙伴，鼠觉得很安心。(ღ˘⌣˘ღ)",
+    "希望这份平静能陪伴你更久一些！(◡ ω ◡)"
+  ],
+  "烦躁":[
+    "试试深呼吸，鼠帮你数数？(๑•̀ㅂ•́)و✧",
+    "咔嚓咔嚓，一点点来，会好起来的！(•̀ᴗ•́)و ̑̑",
+    "揉揉鼠的肚子，心情会不会好一点？(๑•з•๑)"
+  ]
+};
+
+// 添加任务事件
+addTaskBtn.addEventListener('click', ()=>{
+  const text = taskInput.value.trim();
+  const timeRemark = taskTimer.value.trim();
+
+  if(!text){
+    alert("姐姐～请先输入任务哦！(>_<)");
+    return;
+  }
+
+  // 添加任务进列表
+  tasks.push({text, completed:false, time:timeRemark});
+  renderTasks();
+  showMouseMessage(randomFromArray(addTaskResponses));
+  taskInput.value = '';
+  taskTimer.value = '';
+
+  // 添加任务后再弹出modal
+  currentTaskIndex = tasks.length - 1;
+  showModal(timeRemark);
+});
+
+// 显示modal函数
+function showModal(timeRemark){
+  expectedTimeTxt.innerText = timeRemark ? `预计完成时间：${timeRemark}\n请选择你的操作:` : "请选择你的操作：";
+  modalOverlay.classList.remove('hidden');
+}
+
+// 完成
+taskCompleteBtn.addEventListener('click', ()=>{
+  modalOverlay.classList.add('hidden');
+  completeTask(currentTaskIndex);
+});
+
+// 放弃
+taskGiveUpBtn.addEventListener('click', ()=>{
+  modalOverlay.classList.add('hidden');
+  giveUpTask(currentTaskIndex);
+});
+
+// 关闭(X)代表超时
+closeModalBtn.addEventListener('click', ()=>{
+  modalOverlay.classList.add('hidden');
+  handleTimeout(currentTaskIndex);
+});
+
+function completeTask(index){
+  if(index>=0 && index<tasks.length){
+    tasks[index].completed = true;
+    renderTasks();
+    showMouseMessage(randomFromArray(completeTaskResponses));
+  }
+}
+
+function giveUpTask(index){
+  showMouseMessage(randomFromArray(giveUpTaskResponses));
+}
+
+function handleTimeout(index){
+  showMouseMessage(randomFromArray(failedTaskResponses));
+}
+
+// 渲染任务列表
+function renderTasks(){
+  taskList.innerHTML = '';
+  tasks.forEach((t, i)=>{
+    const li = document.createElement('li');
+    li.className = t.completed?'completed':'';
+    li.innerHTML = `
+      <span>${t.text}${t.time?`(预计:${t.time})`:''}</span>
+      <input type="checkbox" ${t.completed?'checked':''}/>
+    `;
+    li.querySelector('input').addEventListener('click',()=>{
+      tasks[i].completed = !tasks[i].completed;
+      if(tasks[i].completed){
+        showMouseMessage(randomFromArray(completeTaskResponses));
+      }
+      renderTasks();
+    });
+    taskList.appendChild(li);
+  });
+}
+
+// 点击仓鼠
+document.getElementById('mouseArea').addEventListener('click', ()=>{
+  showMouseMessage(randomFromArray(clickMouseResponses));
+});
+
+// 显示鼠鼠消息
+function showMouseMessage(msg){
+  mouseMessage.innerText = msg;
+}
+
+// 晚安总结
+summaryBtn.addEventListener('click', ()=>{
+  let completedCount = tasks.filter(t=>t.completed).length;
+  let notCompletedCount = tasks.length - completedCount;
+  if(tasks.length === 0){
+    summaryMessage.innerText = "今天好像没有什么任务记录呢～(>﹏<)";
+    return;
+  }
+  let responsePool = completedCount > notCompletedCount ? summaryGoodResponses : summaryBadResponses;
+  summaryMessage.innerText = randomFromArray(responsePool);
+
+  // 随机送礼物
+  const gift = randomFromArray(possibleGifts);
+  gifts.push(gift);
+  refreshGiftBag();
+});
+
+// 更新礼物袋展示
+function refreshGiftBag(){
+  giftList.innerHTML = '';
+  if(gifts.length===0){
+    noGiftMsg.style.display='block';
+  }else{
+    noGiftMsg.style.display='none';
+    gifts.forEach(g=>{
+      let li = document.createElement('li');
+      li.innerText = g;
+      giftList.appendChild(li);
+    });
+  }
+}
+
+// 心事倾诉
+submitMoodBtn.addEventListener('click', ()=>{
+  const text = moodInput.value.trim();
+  const mood = moodSelect.value;
+  if(!text){
+    alert("姐姐～先说点什么吧 (๑•̀ㅂ•́)و✧");
+    return;
+  }
+  const res = randomFromArray(moodResponsesObj[mood]);
+  moodResponse.style.display = 'block';
+  moodResponse.innerText = res;
+  moodInput.value = '';
+});
+
+// 工具函数
+function randomFromArray(arr){
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
+// 初始化
+showPage(mainPage);
+refreshGiftBag();
+modalOverlay.classList.add('hidden');
+</script>
+</body>
+</html>
